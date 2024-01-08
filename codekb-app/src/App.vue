@@ -1,14 +1,14 @@
 <template>
   <div id="app">
-    <div class="menu">
-      <button @click="activeSection = 'create'">Create Wiki</button>
-      <button @click="activeSection = 'view'">View</button>
-    </div>
-    <div v-if="showFilter">
-      <filter-bar v-model:filter="filter"> </filter-bar>
-    </div>
-
     <div class="container">
+      <div class="menu">
+        <button @click="activeSection = 'create'">Create Wiki</button>
+        <button @click="activeSection = 'view'">View</button>
+      </div>
+  <filter-bar 
+      :categories="categories" 
+      @categoryChanged="fetchWikiEntries"
+    ></filter-bar>
       <div v-if="showCreateEntry">
         <add-entry-form @add-entry="addNewEntry" class="card"></add-entry-form>
       </div>
@@ -46,6 +46,14 @@ import WikiEntry from "./components/WikiEntry.vue";
 import AddEntryForm from "./components/AddEntryForm.vue";
 import FilterBar from "./components/FilterBar.vue";
 import apiService from "./APIService";
+import axios from "axios";
+
+function htmlDecode(input) {
+  const doc = new DOMParser().parseFromString(input, "text/html");
+  return doc.documentElement.textContent;
+}
+
+
 export default {
   components: {
     WikiEntry,
@@ -68,6 +76,7 @@ export default {
       currentPage: 1,
       pageSize: 3,
       currentEdit: null,
+      categories: ['Category1', 'Category2', 'Category3'],
       entryStub: [
         {
           id: 1,
@@ -195,6 +204,16 @@ export default {
     // addEntry(newEntry) {
     //   this.entries.push(newEntry);
     // },
+    async seedDatabase() {
+      try {
+        await axios.post("http://your-api-url/api/database/seed");
+        alert("Database seeded successfully");
+        // Optionally, refresh data in your app if needed
+      } catch (error) {
+        console.error("Error seeding database:", error);
+        alert("Failed to seed database");
+      }
+    },
     nextPage() {
       if (this.currentPage < this.maxPage) this.currentPage++;
     },
@@ -216,14 +235,21 @@ export default {
       }
     },
 
-    async fetchWikiEntries() {
-      try {
-        const response = await apiService.getWikiEntries();
-        this.entries = response.data;
-      } catch (error) {
-        console.error("Error fetching entries:", error);
-      }
-    },
+  async fetchWikiEntries(category = '') {
+    try {
+      const response = await axios.get(`https://localhost:44346/api/WikiEntries?category=${category}`);
+      this.entries = response.data.map(entry => ({
+        ...entry,
+        Title: htmlDecode(entry.Title),
+        Body: htmlDecode(entry.Body),
+        Category: htmlDecode(entry.Category),
+        Tags: htmlDecode(entry.Tags),
+        Reference: htmlDecode(entry.Reference)
+      }));
+    } catch (error) {
+      console.error('Error fetching entries:', error);
+    }
+  },
     async addNewEntry(newEntryData) {
       try {
         if (newEntryData.id) {

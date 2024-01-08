@@ -3,7 +3,10 @@
     <input type="text" v-model="newEntry.title" placeholder="Title" />
 
  <textarea v-model="newEntry.body" placeholder="Enter your text here"></textarea>
-
+    <!-- Debugging: Display newEntry content -->
+    <div class="debug-output">
+      <pre><code>{{ formattedEntry }}</code></pre>
+    </div>
     <input
       type="text"
       v-model="newTag"
@@ -55,6 +58,11 @@ export default {
       },
     };
   },
+   computed: {
+    formattedEntry() {
+      return JSON.stringify(this.newEntry, null, 2);
+    }
+  },
   methods: {
     entryAdd(entryData) {
       entryData.push()
@@ -94,5 +102,11 @@ textarea {
   border-radius: 4px;
   font-size: 16px;
   resize: vertical; /* Allows the user to vertically resize the textarea */
+}
+.debug-output {
+  margin-top: 20px;
+  background-color: #f5f5f5;
+  border: 1px solid #ccc;
+  padding: 10px;
 }
 </style>
